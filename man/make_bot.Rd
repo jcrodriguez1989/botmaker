@@ -6,6 +6,7 @@
 \usage{
 make_bot(
   r_code,
+  cron_schedule = cron_run_every(minutes = 15),
   env_vars = list(),
   bot_timeout = 15,
   repo = NULL,
@@ -15,8 +16,14 @@ make_bot(
 \arguments{
 \item{r_code}{A character with the R code to be executed by the bot.}
 
+\item{cron_schedule}{A character with cron-style scheduling. Github actions has a minimum
+time period for scheduled runs to 5 minutes. For details about cron, please check
+"https://crontab.guru/".}
+
 \item{env_vars}{A named list with the name and the value of each environment variable to use.
-E.g., `list(TWITTER_KEY = "klj3l21kj3l21k", TWITTER_SECRET = "4lh324hl34l23j4hl23j4l23j")`.}
+E.g., `list(TWITTER_KEY = "klj3l21kj3l21k", TWITTER_SECRET = "4lh324hl34l23j4hl23j4l23j")`.
+If you don't want `make_bot` to push your env vars to Github, then provide a named list with
+no values, e.g., `list(TWITTER_KEY = "", TWITTER_SECRET = "")`.}
 
 \item{bot_timeout}{A numeric with the maximum number of minutes to let the bot script run before
 GitHub automatically cancels it.}

@@ -3,8 +3,13 @@
 #' Configure the settings to get the bot running on Github Actions.
 #'
 #' @param r_code A character with the R code to be executed by the bot.
+#' @param cron_schedule A character with cron-style scheduling. Github actions has a minimum
+#'   time period for scheduled runs to 5 minutes. For details about cron, please check
+#'   "https://crontab.guru/".
 #' @param env_vars A named list with the name and the value of each environment variable to use.
 #'   E.g., `list(TWITTER_KEY = "klj3l21kj3l21k", TWITTER_SECRET = "4lh324hl34l23j4hl23j4l23j")`.
+#'   If you don't want `make_bot` to push your env vars to Github, then provide a named list with
+#'   no values, e.g., `list(TWITTER_KEY = "", TWITTER_SECRET = "")`.
 #' @param bot_timeout A numeric with the maximum number of minutes to let the bot script run before
 #'   GitHub automatically cancels it.
 #' @param repo A character with the address of the Github repository in the format "username/repo".
@@ -20,14 +25,14 @@
 #'
 #' @export
 #'
-make_bot <- function(r_code, env_vars = list(), bot_timeout = 15, repo = NULL,
-                     github_pat = Sys.getenv("GITHUB_PAT")) {
+make_bot <- function(r_code, cron_schedule = cron_run_every(minutes = 15), env_vars = list(),
+                     bot_timeout = 15, repo = NULL, github_pat = Sys.getenv("GITHUB_PAT")) {
   # Get and read the yaml template file.
   template_path <- system.file("templates", "gh-actions-bot-config.yaml", package = "botmaker")
   template_path <- "inst/templates/gh-actions-bot-config.yaml"
   template <- readLines(template_path, encoding = "UTF-8", warn = FALSE)
   # Try to push the env vars to Github.
-  # set_gh_secrets(env_vars, repo, github_pat)
+  set_gh_secrets(env_vars, repo, github_pat)
   # Give YAML format.
   r_code <- format_r_code(r_code, "          ")
   env_vars <- format_env_vars(env_vars, "          ")
@@ -54,7 +59,10 @@ make_bot <- function(r_code, env_vars = list(), bot_timeout = 15, repo = NULL,
 #' @importFrom sodium simple_encrypt
 #'
 set_gh_secrets <- function(secrets_list, repo, github_pat) {
-  if (length(secrets_list) == 0) return()
+  # If there are no secrets (or don't have values), then skip.
+  if (length(secrets_list) == 0 || sum(nchar(unlist(secrets_list))) == 0) {
+    return()
+  }
   api_url <- "https://api.github.com"
   public_key <- content(GET(
     glue("{api_url}/repos/{repo}/actions/secrets/public-key"),
@@ -96,7 +104,9 @@ set_gh_secrets <- function(secrets_list, repo, github_pat) {
 #' @param pre_line A character with the string that should be prepended to each line.
 #'
 format_r_code <- function(r_code, pre_line) {
-  if (sum(nchar(r_code)) == 0) return("")
+  if (sum(nchar(r_code)) == 0) {
+    return("")
+  }
   # If the R code is a vector, then collapse it.
   r_code <- paste0(r_code, collapse = "\n")
   # Prepend `pre_line` to each line of code.
@@ -111,7 +121,9 @@ format_r_code <- function(r_code, pre_line) {
 #' @param pre_line A character with the string that should be prepended to each line.
 #'
 format_env_vars <- function(env_vars, pre_line) {
-  if (length(env_vars) == 0) return("")
+  if (length(env_vars) == 0) {
+    return("")
+  }
   # Prepend `pre_line` to each line, and format as GH Actions lines.
   env_vars <- glue(
     "{{{pre_line}}}{{{names(env_vars)}}}: ${{ secrets.{{{names(env_vars)}}} }}",
