@@ -15,6 +15,9 @@
 #'   mandatory, it will be used to try to push `env_vars` to the repository. To get your PAT, visit
 #'   "https://github.com/settings/tokens".
 #'
+#' @importFrom glue glue
+#' @importFrom usethis use_build_ignore
+#'
 #' @export
 #'
 make_bot <- function(r_code, env_vars = list(), bot_timeout = 15, repo = NULL,
@@ -28,8 +31,11 @@ make_bot <- function(r_code, env_vars = list(), bot_timeout = 15, repo = NULL,
   # Give YAML format.
   r_code <- format_r_code(r_code, "          ")
   env_vars <- format_env_vars(env_vars, "          ")
-  browser()
-  glue(paste0(template, collapse = "\n"), .open = "{{{", .close = "}}}")
+  bot_config <- glue(paste0(template, collapse = "\n"), .open = "{{{", .close = "}}}")
+  # Create GH actions folder structure, and copy the bot config.
+  dir.create(".github/workflows/", showWarnings = FALSE, recursive = TRUE)
+  use_build_ignore(".github/")
+  writeLines(bot_config, ".github/workflows/bot.yaml")
 }
 
 #' Write Secrets to Github
