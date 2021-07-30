@@ -29,7 +29,6 @@ make_bot <- function(r_code, cron_schedule = cron_run_every(minutes = 15), env_v
                      bot_timeout = 15, repo = NULL, github_pat = Sys.getenv("GITHUB_PAT")) {
   # Get and read the yaml template file.
   template_path <- system.file("templates", "gh-actions-bot-config.yaml", package = "botmaker")
-  template_path <- "inst/templates/gh-actions-bot-config.yaml"
   template <- readLines(template_path, encoding = "UTF-8", warn = FALSE)
   # Try to push the env vars to Github.
   set_gh_secrets(env_vars, repo, github_pat)
